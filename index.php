@@ -70,7 +70,7 @@
             $fileSize = filesize($filePath);
             $lastModified = date("M d H:i:s", filemtime($filePath));
             $fileType = ($extension === 'jpg' || $extension === 'jpeg') ? 'image' : 
-                       ($extension === 'html' || $extension === 'php') ? 'html' : 'other';
+                      (($extension === 'html' || $extension === 'php') ? 'html' : 'other');
 
             echo "<li class='file-item' data-filename='$file' data-type='$fileType'>";
             echo "<span>$file ($fileSize bytes, modified $lastModified)</span>";
