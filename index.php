@@ -61,7 +61,7 @@
 
     <ul id="fileList">
         <?php
-        $dir = "/var/www/whosts/parvini.info/htdocs/CS370/CS2"; // Adjust path as needed
+        $dir = "/Users/gabegiancarlo/Projects/SpotifyApp"; // Adjust path as needed
         $files = scandir($dir);
         foreach ($files as $file) {
             if ($file === '.' || $file === '..') continue;
