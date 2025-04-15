@@ -67,6 +67,17 @@
             margin: 0;
         }
 
+        .current-path {
+            background-color: var(--bg-secondary);
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            font-family: monospace;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
         .breadcrumb {
             list-style: none;
             display: flex;
@@ -269,6 +280,36 @@
             color: var(--text-secondary);
             font-style: italic;
         }
+        
+        .path-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .path-form input {
+            flex-grow: 1;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .path-form button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .path-form button:hover {
+            background-color: #5a6cbd;
+        }
 
         footer {
             background-color: var(--bg-secondary);
@@ -304,15 +345,20 @@
 
     <div class="container">
         <?php
-        // Get current directory from GET parameter or use default
-        $baseDir = "/Users/gabegiancarlo/Projects"; // Base directory to start from
+        // Get the current directory where this script is located
+        $scriptDir = dirname(__FILE__);
+        
+        // Get navigation path from GET parameter or use the script directory
         $currentPath = isset($_GET['path']) ? $_GET['path'] : '';
         
         // Security check - prevent directory traversal attacks
         $currentPath = str_replace('..', '', $currentPath);
         $currentPath = trim($currentPath, '/\\');
         
+        // Determine full path - either current directory or a subdirectory
+        $baseDir = $scriptDir;
         $fullPath = $baseDir;
+        
         if ($currentPath) {
             $fullPath .= '/' . $currentPath;
         }
@@ -322,6 +368,17 @@
             echo "<div class='empty-dir'>Directory not found or inaccessible.</div>";
             exit;
         }
+        
+        // Display the current directory path
+        echo "<div class='current-path'>";
+        echo "Current Directory: " . $fullPath;
+        echo "</div>";
+        
+        // Manual path navigation form
+        echo "<form class='path-form' method='GET'>";
+        echo "<input type='text' name='path' placeholder='Enter directory path relative to script location' value='$currentPath'>";
+        echo "<button type='submit'>Navigate</button>";
+        echo "</form>";
         
         // Build breadcrumb navigation
         echo "<ul class='breadcrumb'>";
@@ -352,7 +409,26 @@
             $files = scandir($fullPath);
             $hasFiles = false;
             
-            // First list directories
+            // First list parent directory link if we're in a subdirectory
+            if ($currentPath) {
+                echo "<li class='file-item' data-filename='..' data-type='folder'>";
+                echo "<div class='file-icon folder'>📁</div>";
+                echo "<div class='file-details'>";
+                echo "<div class='file-name'>..</div>";
+                echo "<div class='file-meta'>Parent Directory</div>";
+                echo "</div>";
+                echo "<div class='file-actions'>";
+                
+                // Get parent directory path
+                $parentPath = dirname($currentPath);
+                $parentPath = ($parentPath === '.') ? '' : $parentPath;
+                
+                echo "<a href='?path=$parentPath'>Go Up</a>";
+                echo "</div>";
+                echo "</li>";
+            }
+            
+            // Then list directories
             foreach ($files as $file) {
                 if ($file === '.' || $file === '..') continue;
                 
@@ -410,6 +486,14 @@
                         $icon = '📄';
                     }
                     
+                    // Construct a relative URL for the file
+                    $fileURL = '';
+                    if ($currentPath) {
+                        $fileURL = $currentPath . '/' . $file;
+                    } else {
+                        $fileURL = $file;
+                    }
+                    
                     echo "<li class='file-item' data-filename='$file' data-type='$fileType'>";
                     echo "<div class='file-icon $fileType'>$icon</div>";
                     echo "<div class='file-details'>";
@@ -419,13 +503,13 @@
                     
                     echo "<div class='file-actions'>";
                     if ($fileType === 'image') {
-                        echo "<a href='$filePath' target='_blank'>View</a>";
-                        echo "<img class='preview' src='$filePath' alt='Preview'>";
+                        echo "<a href='$fileURL' target='_blank'>View</a>";
+                        echo "<img class='preview' src='$fileURL' alt='Preview'>";
                     } elseif ($fileType === 'html') {
-                        echo "<a href='$filePath' target='_blank'>Open</a>";
-                        echo "<span class='action-btn' onclick='viewSource(\"$filePath\")'>Source</span>";
+                        echo "<a href='$fileURL' target='_blank'>Open</a>";
+                        echo "<span class='action-btn' onclick='viewSource(\"$fileURL\")'>Source</span>";
                     } else {
-                        echo "<span class='action-btn' onclick='viewSource(\"$filePath\")'>View</span>";
+                        echo "<span class='action-btn' onclick='viewSource(\"$fileURL\")'>View</span>";
                     }
                     
                     echo "<div class='tags'>";
@@ -444,7 +528,7 @@
                 }
             }
             
-            if (!$hasFiles) {
+            if (count($files) <= 2) { // Only '.' and '..' entries
                 echo "<li class='empty-dir'>This directory is empty</li>";
             }
             ?>
